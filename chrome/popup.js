@@ -1,4 +1,3 @@
-// Tab Memory Extension - Professional Version
 class TabMemoryExtension {
   constructor() {
     this.browserAPI = null;
@@ -14,7 +13,7 @@ class TabMemoryExtension {
       REFERENCE_MEMORY: 4096
     };
     
-    // DOM elements cache
+    
     this.elements = {};
   }
 
@@ -22,29 +21,29 @@ class TabMemoryExtension {
     console.log('🚀 Tab Memory Extension initializing...');
     
     try {
-      // 1. Cache DOM elements
+      
       this.cacheElements();
       
-      // 2. Detect browser API
+      
       this.browserAPI = this.detectBrowserAPI();
       if (!this.browserAPI) {
         throw new Error('Unsupported browser');
       }
       
-      // 3. Show loading state
+      
       this.showLoadingState();
       
-      // 4. Setup event listeners
+      
       this.setupEventListeners();
       
-      // 5. Load initial data
+      
       await this.loadInitialData();
       
-      // 6. Start auto-refresh
+      
       this.startAutoRefresh();
       
       this.isInitialized = true;
-      console.log('✅ Extension initialized successfully');
+      console.log(' Extension initialized successfully');
       
     } catch (error) {
       console.error('❌ Initialization failed:', error);
@@ -73,23 +72,23 @@ class TabMemoryExtension {
       }
     });
     
-    console.log('✅ DOM elements cached');
+    console.log(' DOM elements cached');
   }
 
   detectBrowserAPI() {
     console.log('🔍 Detecting browser API...');
     
     if (typeof chrome !== 'undefined' && chrome.tabs) {
-      console.log('✅ Chrome/Edge API detected');
+      console.log(' Chrome/Edge API detected');
       return chrome;
     }
     
     if (typeof browser !== 'undefined' && browser.tabs) {
-      console.log('✅ Firefox API detected');
+      console.log(' Firefox API detected');
       return browser;
     }
     
-    console.error('❌ No supported browser API found');
+    console.error(' No supported browser API found');
     return null;
   }
 
@@ -105,7 +104,6 @@ class TabMemoryExtension {
       `;
     }
     
-    // Disable buttons during loading
     ['refresh-btn', 'sort-btn', 'cleanup-btn'].forEach(id => {
       if (this.elements[id]) {
         this.elements[id].disabled = true;
@@ -184,53 +182,47 @@ class TabMemoryExtension {
     
     if (this.elements['refresh-btn']) {
       this.elements['refresh-btn'].addEventListener('click', () => this.handleRefresh());
-      console.log('✅ Refresh listener added');
+      console.log(' Refresh listener added');
     }
     
     if (this.elements['sort-btn']) {
       this.elements['sort-btn'].addEventListener('click', () => this.handleSort());
-      console.log('✅ Sort listener added');
+      console.log(' Sort listener added');
     }
     
     if (this.elements['cleanup-btn']) {
       this.elements['cleanup-btn'].addEventListener('click', () => this.handleCleanup());
-      console.log('✅ Cleanup listener added');
+      console.log(' Cleanup listener added');
     }
     
-    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
     
-    // Auto-refresh management
     window.addEventListener('blur', () => this.stopAutoRefresh());
     window.addEventListener('focus', () => this.startAutoRefresh());
   }
 
   async loadInitialData() {
-    console.log('📥 Loading initial data...');
+    console.log(' Loading initial data...');
     
     try {
-      // Get all tabs
       const tabs = await this.browserAPI.tabs.query({});
-      console.log(`📑 Found ${tabs.length} tabs`);
+      console.log(` Found ${tabs.length} tabs`);
       
-      // Process tabs data
       this.tabsData = await this.processTabs(tabs);
       
-      // Update UI
       this.renderTabsList();
       this.updateSummary();
       
-      // Enable buttons
       ['refresh-btn', 'sort-btn', 'cleanup-btn'].forEach(id => {
         if (this.elements[id]) {
           this.elements[id].disabled = false;
         }
       });
       
-      console.log('✅ Initial data loaded');
+      console.log(' Initial data loaded');
       
     } catch (error) {
-      console.error('❌ Failed to load initial data:', error);
+      console.error(' Failed to load initial data:', error);
       throw error;
     }
   }
@@ -239,10 +231,8 @@ class TabMemoryExtension {
     const processedTabs = [];
     
     for (const tab of tabs) {
-      // Estimate memory usage
       const memory = this.estimateMemoryByUrl(tab.url);
       
-      // Get favicon
       const favIconUrl = this.getFaviconUrl(tab);
       
       processedTabs.push({
@@ -269,26 +259,25 @@ class TabMemoryExtension {
     const urlLower = url.toLowerCase();
     let baseMemory = 80;
     
-    // Enhanced memory estimation
     if (urlLower.includes('youtube.com') || urlLower.includes('netflix.com')) {
-      baseMemory = 350 + Math.floor(Math.random() * 150); // 350-500MB
+      baseMemory = 350 + Math.floor(Math.random() * 150); 
     } else if (urlLower.includes('figma.com') || urlLower.includes('adobe.com')) {
-      baseMemory = 300 + Math.floor(Math.random() * 100); // 300-400MB
+      baseMemory = 300 + Math.floor(Math.random() * 100); 
     } else if (urlLower.includes('docs.google.com') || urlLower.includes('notion.so')) {
-      baseMemory = 200 + Math.floor(Math.random() * 100); // 200-300MB
+      baseMemory = 200 + Math.floor(Math.random() * 100); 
     } else if (urlLower.includes('twitter.com') || urlLower.includes('facebook.com')) {
-      baseMemory = 150 + Math.floor(Math.random() * 100); // 150-250MB
+      baseMemory = 150 + Math.floor(Math.random() * 100); 
     } else if (urlLower.includes('reddit.com') || urlLower.includes('linkedin.com')) {
-      baseMemory = 120 + Math.floor(Math.random() * 80); // 120-200MB
+      baseMemory = 120 + Math.floor(Math.random() * 80); 
     } else if (urlLower.includes('discord.com') || urlLower.includes('slack.com')) {
-      baseMemory = 180 + Math.floor(Math.random() * 120); // 180-300MB
+      baseMemory = 180 + Math.floor(Math.random() * 120); 
     } else if (urlLower.includes('github.com') || urlLower.includes('gitlab.com')) {
-      baseMemory = 100 + Math.floor(Math.random() * 80); // 100-180MB
+      baseMemory = 100 + Math.floor(Math.random() * 80); 
     } else {
-      baseMemory = 80 + Math.floor(Math.random() * 70); // 80-150MB
+      baseMemory = 80 + Math.floor(Math.random() * 70); 
     }
     
-    return Math.max(20, baseMemory); // Minimum 20MB
+    return Math.max(20, baseMemory); 
   }
 
   getFaviconUrl(tab) {
@@ -320,24 +309,24 @@ class TabMemoryExtension {
       return;
     }
     
-    // Sort tabs if needed
+    
     const tabsToDisplay = this.sortDescending 
       ? [...this.tabsData].sort((a, b) => b.memory - a.memory)
       : [...this.tabsData].sort((a, b) => a.memory - b.memory);
     
-    // Create tab elements
+    
     tabsToDisplay.forEach(tab => {
       const tabElement = this.createTabElement(tab);
       this.elements['tabs-list'].appendChild(tabElement);
     });
     
-    console.log(`✅ Rendered ${tabsToDisplay.length} tabs`);
+    console.log(` Rendered ${tabsToDisplay.length} tabs`);
   }
 
   createTabElement(tab) {
     const row = document.createElement('div');
     
-    // Determine classes
+    
     const classes = ['tab-row'];
     if (tab.memory > this.config.CRITICAL_THRESHOLD) classes.push('critical-memory');
     else if (tab.memory > this.config.HIGH_THRESHOLD) classes.push('high-memory');
@@ -345,13 +334,12 @@ class TabMemoryExtension {
     
     row.className = classes.join(' ');
     
-    // Prepare data for display
+    
     const displayTitle = this.truncateText(tab.title, 45);
     const displayUrl = this.formatUrlForDisplay(tab.url);
     const memoryDisplay = this.formatMemory(tab.memory);
     const memoryClass = this.getMemoryColorClass(tab.memory);
     
-    // Create HTML
     row.innerHTML = `
       <div class="favicon-container">
         ${tab.favIconUrl 
@@ -367,8 +355,8 @@ class TabMemoryExtension {
       <div class="tab-info">
         <div class="tab-title" title="${this.escapeHtml(tab.title)}">
           ${this.escapeHtml(displayTitle)}
-          ${tab.pinned ? ' 📌' : ''}
-          ${tab.audible ? ' 🔊' : ''}
+          ${tab.pinned ? ' ' : ''}
+          ${tab.audible ? ' ' : ''}
         </div>
         <div class="tab-url" title="${this.escapeHtml(tab.url)}">
           ${this.escapeHtml(displayUrl)}
@@ -377,18 +365,17 @@ class TabMemoryExtension {
       <div class="memory-usage ${memoryClass} tooltip" 
            title="Memory usage: ${memoryDisplay}">
         ${memoryDisplay}
-        ${tab.active ? ' ⭐' : ''}
+        ${tab.active ? ' ' : ''}
       </div>
     `;
     
-    // Add event listeners
+    
     this.addTabEventListeners(row, tab);
     
     return row;
   }
 
   addTabEventListeners(element, tab) {
-    // Click to switch tab
     element.addEventListener('click', (e) => {
       if (!e.target.classList.contains('memory-usage') && 
           !e.target.closest('.memory-usage')) {
@@ -396,13 +383,11 @@ class TabMemoryExtension {
       }
     });
     
-    // Right-click for context menu
     element.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       this.showTabContextMenu(e, tab);
     });
     
-    // Memory usage click for details
     const memoryEl = element.querySelector('.memory-usage');
     if (memoryEl) {
       memoryEl.addEventListener('click', (e) => {
@@ -419,7 +404,6 @@ class TabMemoryExtension {
   }
 
   showTabContextMenu(event, tab) {
-    // Simple implementation - can be enhanced with custom menu
     const action = confirm(`Perform action on "${this.truncateText(tab.title, 30)}"?\n\nClick OK to close tab, Cancel for menu.`);
     
     if (action) {
@@ -516,12 +500,10 @@ Tab ID: ${tab.id}
         `${totalTabs} tabs • ${heavyTabs} heavy`;
     }
     
-    // Update progress bar
     if (this.elements['memory-progress']) {
       const percentage = Math.min((totalMemory / this.config.REFERENCE_MEMORY) * 100, 100);
       this.elements['memory-progress'].style.width = `${percentage}%`;
       
-      // Dynamic color based on percentage
       let gradient;
       if (percentage > 80) {
         gradient = 'linear-gradient(135deg, #ef4444, #dc2626)';
@@ -535,7 +517,6 @@ Tab ID: ${tab.id}
       
       this.elements['memory-progress'].style.background = gradient;
       
-      // Update performance indicator
       this.updatePerformanceIndicator(performanceWarning);
     }
   }
@@ -555,13 +536,12 @@ Tab ID: ${tab.id}
   }
 
   async handleRefresh() {
-    console.log('🔄 Handling refresh...');
+    console.log(' Handling refresh...');
     
     if (this.elements['refresh-btn']) {
       this.elements['refresh-btn'].disabled = true;
       this.elements['refresh-btn'].innerHTML = '<span class="loading"></span> Refreshing...';
       
-      // Add loading animation
       if (!document.querySelector('.loading')) {
         const style = document.createElement('style');
         style.textContent = `
@@ -591,7 +571,7 @@ Tab ID: ${tab.id}
       if (this.elements['refresh-btn']) {
         setTimeout(() => {
           this.elements['refresh-btn'].disabled = false;
-          this.elements['refresh-btn'].innerHTML = '🔄 Refresh';
+          this.elements['refresh-btn'].innerHTML = ' Refresh';
         }, 500);
       }
     }
@@ -613,7 +593,6 @@ Tab ID: ${tab.id}
       this.elements['sort-btn'].textContent = `Sort ${icon}`;
       this.elements['sort-btn'].title = `Sort by memory (${direction})`;
       
-      // Add visual feedback
       this.elements['sort-btn'].style.transform = 'scale(0.95)';
       setTimeout(() => {
         this.elements['sort-btn'].style.transform = 'scale(1)';
@@ -662,25 +641,21 @@ Tab ID: ${tab.id}
   }
 
   handleKeyboardShortcuts(event) {
-    // Ctrl/Cmd + R to refresh
     if ((event.ctrlKey || event.metaKey) && event.key === 'r') {
       event.preventDefault();
       this.handleRefresh();
     }
     
-    // Ctrl/Cmd + S to sort
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
       event.preventDefault();
       this.handleSort();
     }
     
-    // Ctrl/Cmd + D to cleanup
     if ((event.ctrlKey || event.metaKey) && event.key === 'd') {
       event.preventDefault();
       this.handleCleanup();
     }
     
-    // Escape to close popup
     if (event.key === 'Escape') {
       window.close();
     }
@@ -702,7 +677,6 @@ Tab ID: ${tab.id}
     }
   }
 
-  // Utility methods
   formatMemory(mb) {
     if (mb >= 1024) {
       return `${(mb / 1024).toFixed(1)} GB`;
@@ -736,7 +710,6 @@ Tab ID: ${tab.id}
       const urlObj = new URL(url);
       let display = urlObj.hostname.replace('www.', '');
       
-      // Add path if it's short
       if (display.length + urlObj.pathname.length <= 30) {
         display += urlObj.pathname;
       }
@@ -772,16 +745,13 @@ Tab ID: ${tab.id}
   }
 
   showToast(message, type = 'info') {
-    // Remove existing toast
     const existingToast = document.querySelector('.memory-toast');
     if (existingToast) existingToast.remove();
     
-    // Create toast
     const toast = document.createElement('div');
     toast.className = `memory-toast toast-${type}`;
     toast.textContent = message;
     
-    // Add styles if not present
     if (!document.querySelector('#toast-styles')) {
       const style = document.createElement('style');
       style.id = 'toast-styles';
@@ -828,10 +798,8 @@ Tab ID: ${tab.id}
     
     document.body.appendChild(toast);
     
-    // Show toast
     setTimeout(() => toast.classList.add('show'), 10);
     
-    // Auto-remove
     setTimeout(() => {
       toast.classList.remove('show');
       setTimeout(() => toast.remove(), 300);
@@ -858,7 +826,6 @@ Tab ID: ${tab.id}
         </div>
       `;
       
-      // Add retry listener
       setTimeout(() => {
         const retryBtn = document.getElementById('retry-btn');
         if (retryBtn) {
@@ -869,7 +836,6 @@ Tab ID: ${tab.id}
       }, 100);
     }
     
-    // Add error styles
     const errorStyles = `
       .error-state {
         text-align: center;
@@ -924,7 +890,6 @@ Tab ID: ${tab.id}
   }
 }
 
-// Initialize the extension when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   const extension = new TabMemoryExtension();
   extension.init();
