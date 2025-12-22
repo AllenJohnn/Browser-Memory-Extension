@@ -1,4 +1,4 @@
-/* Reset and base styles */
+
 * {
   margin: 0;
   padding: 0;
@@ -20,7 +20,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glass effect container */
+
 .glass-effect {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -29,7 +29,7 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
-/* Header */
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -75,7 +75,6 @@ body {
   border: 1px solid rgba(226, 232, 240, 0.5);
 }
 
-/* Summary section */
 .summary {
   background: linear-gradient(135deg, #ffffff, #f8fafc);
   padding: 18px;
@@ -130,7 +129,6 @@ body {
   border: 1px solid rgba(226, 232, 240, 0.5);
 }
 
-/* Progress bar */
 .progress-container {
   margin-top: 16px;
   position: relative;
@@ -191,7 +189,6 @@ body {
   }
 }
 
-/* Tabs list container */
 #tabs-list {
   max-height: 320px;
   overflow-y: auto;
@@ -217,7 +214,6 @@ body {
   background: linear-gradient(180deg, #64748b, #475569);
 }
 
-/* Tab row */
 .tab-row {
   display: flex;
   align-items: center;
@@ -298,7 +294,6 @@ body {
   }
 }
 
-/* Favicon */
 .favicon-container {
   position: relative;
   width: 28px;
@@ -339,7 +334,6 @@ body {
   font-weight: 600;
 }
 
-/* Tab info */
 .tab-info {
   flex: 1;
   min-width: 0;
@@ -369,7 +363,6 @@ body {
   opacity: 0.8;
 }
 
-/* Memory usage display */
 .memory-usage {
   font-weight: 700;
   font-size: 12px;
@@ -455,7 +448,6 @@ body {
   }
 }
 
-/* Controls */
 .controls {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -562,7 +554,6 @@ body {
   font-size: 14px;
 }
 
-/* Empty state */
 .empty-state {
   text-align: center;
   padding: 48px 20px;
@@ -591,7 +582,6 @@ body {
   opacity: 0.7;
 }
 
-/* Loading animation */
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -616,7 +606,6 @@ body {
   }
 }
 
-/* Error state */
 .error-state {
   text-align: center;
   padding: 24px;
@@ -667,7 +656,6 @@ body {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-/* Tooltip */
 .tooltip {
   position: relative;
 }
@@ -711,7 +699,6 @@ body {
   transform: translateX(-50%) translateY(-4px);
 }
 
-/* GitHub footer */
 .github-footer {
   margin-top: 20px;
   padding-top: 16px;
@@ -775,7 +762,6 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%233b82f6'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.92 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z' fill='%233b82f6'/%3E%3C/svg%3E");
 }
 
-/* Performance indicator */
 .performance-indicator {
   position: absolute;
   top: 16px;
@@ -807,7 +793,6 @@ body {
   }
 }
 
-/* Responsive adjustments */
 @media (max-width: 440px) {
   body {
     width: 380px;
