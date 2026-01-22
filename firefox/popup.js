@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Browser API detection - works with Chrome, Edge, and Firefox
   const browserAPI = (typeof chrome !== 'undefined' && chrome.tabs) ? chrome : 
                      (typeof browser !== 'undefined' && browser.tabs) ? browser : null;
   
@@ -8,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
   
-  // DOM elements
   const tabsList = document.getElementById('tabs-list');
   const refreshBtn = document.getElementById('refresh-btn');
   const sortBtn = document.getElementById('sort-btn');
@@ -18,28 +16,18 @@ document.addEventListener('DOMContentLoaded', function() {
   const memoryProgress = document.getElementById('memory-progress');
   const totalMemory = document.getElementById('total-memory');
   
-  // State variables
   let tabsData = [];
   let sortDescending = true;
   let refreshInterval;
   
-  // Main function to fetch and display memory info
   async function updateMemoryInfo() {
     try {
-      console.log('Fetching memory info...');
-      
-      // Get all open tabs - works in Chrome/Edge/Firefox
       const tabs = await browserAPI.tabs.query({});
-      console.log(`Found ${tabs.length} tabs`);
-      
-      // Memory estimation - fallback for all browsers
       let processMap = new Map();
       
-      // Try to get real memory data (Chrome/Edge specific)
       if (typeof chrome !== 'undefined' && chrome.processes && typeof chrome.processes.getProcessInfo === 'function') {
         try {
           const processes = await chrome.processes.getProcessInfo(['privateMemory']);
-          console.log(`Got ${processes.length} processes`);
           
           processes.forEach(process => {
             if (process.tabs && process.tabs.length > 0) {
@@ -55,28 +43,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           });
         } catch (processError) {
-          console.warn('Could not get process info:', processError);
         }
-      } else {
-        console.log('Using estimated memory (standard for Firefox, fallback for Chrome)');
       }
       
-      // Prepare tabs data
       tabsData = await Promise.all(tabs.map(async tab => {
         const processInfo = processMap.get(tab.id);
         const memoryMB = processInfo?.memory || estimateMemoryByUrl(tab.url);
         
-        // Get favicon URL - handle different browser APIs
         let favIconUrl = tab.favIconUrl;
         if (!favIconUrl && tab.url) {
           try {
             const url = new URL(tab.url);
             if (url.protocol.startsWith('http')) {
-              // Use favicon service as fallback
               favIconUrl = `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=16`;
             }
           } catch (e) {
-            // Invalid URL, use default
           }
         }
         
@@ -92,45 +73,37 @@ document.addEventListener('DOMContentLoaded', function() {
         };
       }));
       
-      // Display tabs and update summary
       displayTabs(tabsData);
       updateSummary();
       
     } catch (error) {
-      console.error('Error in updateMemoryInfo:', error);
       showErrorMessage('Failed to load memory data. Try refreshing.');
     }
   }
   
-  // Estimate memory based on URL/domain (fallback when processes API fails)
   function estimateMemoryByUrl(url) {
-    if (!url) return 50; // Default 50MB for new tabs
+    if (!url) return 50;
     
     const urlStr = url.toLowerCase();
     
-    // Heavy sites
     if (urlStr.includes('youtube.com') || urlStr.includes('netflix.com') || 
         urlStr.includes('figma.com') || urlStr.includes('photoshop.com')) {
-      return 300 + Math.floor(Math.random() * 200); // 300-500MB
+      return 300 + Math.floor(Math.random() * 200);
     }
     
-    // Medium sites
     if (urlStr.includes('docs.google.com') || urlStr.includes('notion.so') ||
         urlStr.includes('discord.com') || urlStr.includes('slack.com')) {
-      return 150 + Math.floor(Math.random() * 100); // 150-250MB
+      return 150 + Math.floor(Math.random() * 100);
     }
     
-    // Social media
     if (urlStr.includes('twitter.com') || urlStr.includes('facebook.com') ||
         urlStr.includes('instagram.com') || urlStr.includes('linkedin.com')) {
-      return 100 + Math.floor(Math.random() * 100); // 100-200MB
+      return 100 + Math.floor(Math.random() * 100);
     }
     
-    // Light sites
-    return 50 + Math.floor(Math.random() * 50); // 50-100MB
+    return 50 + Math.floor(Math.random() * 50);
   }
   
-  // Display tabs in the popup
   function displayTabs(tabs) {
     if (!tabsList) return;
     
@@ -146,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    // Sort tabs if needed
     let tabsToDisplay = [...tabs];
     if (sortDescending) {
       tabsToDisplay.sort((a, b) => b.memory - a.memory);
@@ -156,7 +128,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const row = document.createElement('div');
       row.className = `tab-row ${tab.memory > 500 ? 'critical-memory' : tab.memory > 200 ? 'high-memory' : ''} ${tab.active ? 'active-tab' : ''}`;
       
-      // Truncate title
       const maxTitleLength = 40;
       const displayTitle = tab.title.length > maxTitleLength 
         ? tab.title.substring(0, maxTitleLength) + '...' 
@@ -183,17 +154,14 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       `;
       
-      // Click to switch to tab
       row.addEventListener('click', (e) => {
-        // Don't switch if user clicked on memory usage
         if (!e.target.classList.contains('memory-usage') && !e.target.closest('.memory-usage')) {
           browserAPI.tabs.update(tab.id, { active: true });
           browserAPI.windows.update(tab.windowId, { focused: true });
-          window.close(); // Close popup after switching
+          window.close();
         }
       });
       
-      // Memory usage click - show details
       const memoryEl = row.querySelector('.memory-usage');
       if (memoryEl) {
         memoryEl.addEventListener('click', (e) => {
@@ -202,7 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       }
       
-      // Right-click to close tab
       row.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         if (confirm(`Close "${tab.title.substring(0, 30)}${tab.title.length > 30 ? '...' : ''}"?`)) {
@@ -215,13 +182,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Update summary statistics
   function updateSummary() {
     const totalTabs = tabsData.length;
     const totalMemoryUsed = tabsData.reduce((sum, tab) => sum + tab.memory, 0);
     const avgMemory = totalTabs > 0 ? Math.round(totalMemoryUsed / totalTabs) : 0;
     
-    // Find heaviest tab
     const heaviestTab = tabsData.length > 0 
       ? tabsData.reduce((max, tab) => tab.memory > max.memory ? tab : max, tabsData[0])
       : null;
@@ -238,19 +203,15 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // Update total memory display
     if (totalMemory) {
       totalMemory.textContent = `${totalTabs} tabs`;
     }
     
-    // Update progress bar
     if (memoryProgress) {
-      // Assume 4GB (4096MB) as baseline for visualization
       const referenceMemory = 4096;
       const percentage = Math.min((totalMemoryUsed / referenceMemory) * 100, 100);
       memoryProgress.style.width = `${percentage}%`;
       
-      // Change color based on usage
       if (percentage > 75) {
         memoryProgress.style.background = 'linear-gradient(135deg, #FF5722, #FF9800)';
       } else if (percentage > 50) {
@@ -263,7 +224,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Sort tabs by memory usage
   function sortTabs() {
     sortDescending = !sortDescending;
     if (sortBtn) {
@@ -273,9 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
     displayTabs(tabsData);
   }
   
-  // Close tabs using excessive memory
   async function cleanupHeavyTabs() {
-    const threshold = 300; // 300MB threshold
+    const threshold = 300;
     const heavyTabs = tabsData.filter(tab => tab.memory > threshold && !tab.pinned);
     
     if (heavyTabs.length === 0) {
@@ -291,7 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const tabIds = heavyTabs.map(tab => tab.id);
       await browserAPI.tabs.remove(tabIds);
       
-      // Show notification if available
       if (browserAPI.notifications && browserAPI.notifications.create) {
         try {
           browserAPI.notifications.create({
@@ -301,7 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
             message: `Closed ${heavyTabs.length} heavy tab(s)`
           });
         } catch (notifError) {
-          console.log('Notifications not supported:', notifError);
         }
       }
       
@@ -309,7 +266,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Helper: Show memory details for a tab
   function showMemoryDetails(tab) {
     const details = `
       <strong>${escapeHtml(tab.title)}</strong><br>
@@ -319,11 +275,9 @@ document.addEventListener('DOMContentLoaded', function() {
       Tab ID: ${tab.id}
     `;
     
-    // Simple alert for now
     alert(details);
   }
   
-  // Helper: Format memory in appropriate units
   function formatMemory(mb) {
     if (mb < 1) {
       return '<1 MB';
@@ -334,7 +288,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Helper: Get CSS class for memory color
   function getMemoryColorClass(memory) {
     if (memory > 500) return 'memory-critical';
     if (memory > 200) return 'memory-high';
@@ -342,7 +295,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return 'memory-low';
   }
   
-  // Helper: Escape HTML
   function escapeHtml(text) {
     if (typeof text !== 'string') return '';
     const div = document.createElement('div');
@@ -350,7 +302,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return div.innerHTML;
   }
   
-  // Helper: Truncate URL for display
   function truncateUrl(url, maxLength = 35) {
     if (!url) return '';
     try {
@@ -362,21 +313,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return hostname + path;
       }
       
-      const availableForPath = maxLength - hostname.length - 3; // -3 for "..."
+      const availableForPath = maxLength - hostname.length - 3;
       if (availableForPath > 0) {
         return hostname + path.substring(0, availableForPath) + '...';
       } else {
         return hostname.substring(0, maxLength - 3) + '...';
       }
     } catch {
-      // If URL parsing fails, just truncate the string
       return url.length > maxLength 
         ? url.substring(0, maxLength - 3) + '...' 
         : url;
     }
   }
   
-  // Helper: Show error message
   function showErrorMessage(message) {
     if (tabsList) {
       tabsList.innerHTML = `
@@ -389,7 +338,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       `;
       
-      // Add retry button listener
       setTimeout(() => {
         const retryBtn = document.getElementById('retry-btn');
         if (retryBtn) {
@@ -397,12 +345,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }, 100);
     } else {
-      // If tabsList doesn't exist yet, show basic alert
       alert(`Tab Memory Extension Error: ${message}`);
     }
   }
   
-  // Initialize event listeners
   function initEventListeners() {
     if (refreshBtn) {
       refreshBtn.addEventListener('click', () => {
@@ -425,10 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
       cleanupBtn.addEventListener('click', cleanupHeavyTabs);
     }
     
-    // Auto-refresh interval
     startAutoRefresh();
     
-    // Stop auto-refresh when popup loses focus
     window.addEventListener('blur', () => {
       if (refreshInterval) {
         clearInterval(refreshInterval);
@@ -436,7 +380,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     
-    // Restart auto-refresh when popup gains focus
     window.addEventListener('focus', () => {
       if (!refreshInterval) {
         startAutoRefresh();
@@ -444,33 +387,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Start auto-refresh
   function startAutoRefresh() {
     if (refreshInterval) {
       clearInterval(refreshInterval);
     }
-    refreshInterval = setInterval(updateMemoryInfo, 8000); // Refresh every 8 seconds
+    refreshInterval = setInterval(updateMemoryInfo, 8000);
   }
   
-  // Initialize everything
   function init() {
-    console.log('Initializing Tab Memory extension...');
-    console.log('Browser API detected:', browserAPI === chrome ? 'Chrome/Edge' : 'Firefox');
-    
-    // Initialize event listeners
     initEventListeners();
-    
-    // Load initial data
     updateMemoryInfo();
-    
-    console.log('Extension initialized successfully');
   }
   
-  // Start the extension
   init();
 });
 
-// Add this CSS for the retry button
 const retryButtonStyle = `
   .retry-btn {
     margin-top: 10px;
@@ -489,7 +420,6 @@ const retryButtonStyle = `
   }
 `;
 
-// Inject retry button styles only
 const retryStyleElement = document.createElement('style');
 retryStyleElement.textContent = retryButtonStyle;
 document.head.appendChild(retryStyleElement);

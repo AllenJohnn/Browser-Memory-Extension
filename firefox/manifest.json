@@ -1,10 +1,10 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Tab Memory Monitor",
   "version": "1.0.0",
   "description": "Monitor memory usage of browser tabs.",
   "permissions": ["tabs"],
-  "browser_action": {
+  "action": {
     "default_popup": "popup.html",
     "default_title": "Tab Memory",
     "default_icon": {
@@ -14,8 +14,7 @@
     }
   },
   "background": {
-    "scripts": ["background.js"],
-    "persistent": false
+    "service_worker": "background.js"
   },
   "icons": {
     "48": "icon48.png",

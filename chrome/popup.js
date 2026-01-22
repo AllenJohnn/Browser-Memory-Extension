@@ -16,7 +16,6 @@ class TabMemoryExtension {
   }
 
   async init() {
-    console.log('🚀 Tab Memory Extension initializing...');
     try {
       this.cacheElements();
       this.browserAPI = this.detectBrowserAPI();
@@ -28,15 +27,12 @@ class TabMemoryExtension {
       await this.loadInitialData();
       this.startAutoRefresh();
       this.isInitialized = true;
-      console.log('✅ Extension initialized successfully');
     } catch (error) {
-      console.error('❌ Initialization failed:', error);
       this.showCriticalError(error.message);
     }
   }
 
   cacheElements() {
-    console.log('🔍 Caching DOM elements...');
     const elementIds = [
       'tabs-list',
       'refresh-btn', 
@@ -49,29 +45,20 @@ class TabMemoryExtension {
     ];
     elementIds.forEach(id => {
       this.elements[id] = document.getElementById(id);
-      if (!this.elements[id]) {
-        console.warn(`⚠️ Element not found: #${id}`);
-      }
     });
-    console.log('✅ DOM elements cached');
   }
 
   detectBrowserAPI() {
-    console.log('🔍 Detecting browser API...');
     if (typeof chrome !== 'undefined' && chrome.tabs) {
-      console.log('✅ Chrome/Edge API detected');
       return chrome;
     }
     if (typeof browser !== 'undefined' && browser.tabs) {
-      console.log('✅ Firefox API detected');
       return browser;
     }
-    console.error('❌ No supported browser API found');
     return null;
   }
 
   showLoadingState() {
-    console.log('⏳ Showing loading state...');
     if (this.elements['tabs-list']) {
       this.elements['tabs-list'].innerHTML = `
         <div class="loading-container">
@@ -145,18 +132,14 @@ class TabMemoryExtension {
   }
 
   setupEventListeners() {
-    console.log('🔧 Setting up event listeners...');
     if (this.elements['refresh-btn']) {
       this.elements['refresh-btn'].addEventListener('click', () => this.handleRefresh());
-      console.log('✅ Refresh listener added');
     }
     if (this.elements['sort-btn']) {
       this.elements['sort-btn'].addEventListener('click', () => this.handleSort());
-      console.log('✅ Sort listener added');
     }
     if (this.elements['cleanup-btn']) {
       this.elements['cleanup-btn'].addEventListener('click', () => this.handleCleanup());
-      console.log('✅ Cleanup listener added');
     }
     document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
     window.addEventListener('blur', () => this.stopAutoRefresh());
@@ -164,10 +147,8 @@ class TabMemoryExtension {
   }
 
   async loadInitialData() {
-    console.log('📥 Loading initial data...');
     try {
       const tabs = await this.browserAPI.tabs.query({});
-      console.log(`📑 Found ${tabs.length} tabs`);
       this.tabsData = await this.processTabs(tabs);
       this.renderTabsList();
       this.updateSummary();
@@ -176,9 +157,7 @@ class TabMemoryExtension {
           this.elements[id].disabled = false;
         }
       });
-      console.log('✅ Initial data loaded');
     } catch (error) {
-      console.error('❌ Failed to load initial data:', error);
       throw error;
     }
   }
@@ -240,7 +219,6 @@ class TabMemoryExtension {
           return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=32`;
         }
       } catch (error) {
-        console.debug('URL parsing error:', error);
       }
     }
     return null;
@@ -260,7 +238,6 @@ class TabMemoryExtension {
       const tabElement = this.createTabElement(tab);
       this.elements['tabs-list'].appendChild(tabElement);
     });
-    console.log(`✅ Rendered ${tabsToDisplay.length} tabs`);
   }
 
   createTabElement(tab) {
@@ -450,7 +427,6 @@ Tab ID: ${tab.id}
   }
 
   async handleRefresh() {
-    console.log('🔄 Handling refresh...');
     if (this.elements['refresh-btn']) {
       const originalContent = this.elements['refresh-btn'].innerHTML;
       this.elements['refresh-btn'].disabled = true;
@@ -475,7 +451,6 @@ Tab ID: ${tab.id}
         await this.refreshData();
         this.showToast('Data refreshed successfully', 'success');
       } catch (error) {
-        console.error('Refresh error:', error);
         this.showToast('Failed to refresh data', 'error');
       } finally {
         setTimeout(() => {
@@ -510,7 +485,6 @@ Tab ID: ${tab.id}
   }
 
   async handleCleanup() {
-    console.log('🧹 Handling cleanup...');
     const heavyTabs = this.tabsData.filter(tab => 
       tab.memory > this.config.HEAVY_TAB_THRESHOLD && 
       !tab.pinned && 
@@ -529,7 +503,6 @@ Tab ID: ${tab.id}
         this.showToast(`Closed ${heavyTabs.length} heavy tabs`, 'success');
         await this.refreshData();
       } catch (error) {
-        console.error('Cleanup error:', error);
         this.showToast('Failed to close tabs', 'error');
       }
     }
@@ -557,7 +530,7 @@ Tab ID: ${tab.id}
     this.stopAutoRefresh();
     this.autoRefreshInterval = setInterval(() => {
       if (this.isInitialized && document.hasFocus()) {
-        this.refreshData().catch(console.error);
+        this.refreshData().catch(() => {});
       }
     }, this.config.REFRESH_INTERVAL);
   }
@@ -686,7 +659,6 @@ Tab ID: ${tab.id}
   }
 
   showCriticalError(message) {
-    console.error('💥 Critical error:', message);
     if (this.elements['tabs-list']) {
       this.elements['tabs-list'].innerHTML = `
         <div class="error-state">
