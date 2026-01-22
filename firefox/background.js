@@ -4,6 +4,7 @@ let memoryHistory = [];
 
 browserAPI.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
+    void 0;
   }
 });
 
@@ -28,6 +29,7 @@ async function checkMemoryPeriodically() {
         memoryHistory.shift();
       }
     } catch (error) {
+      void 0;
     }
   }
 }
