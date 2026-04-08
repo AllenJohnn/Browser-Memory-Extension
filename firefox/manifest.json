@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Tab Memory Monitor",
-  "version": "1.0.0",
-  "description": "Monitor memory usage of browser tabs.",
-  "permissions": ["tabs"],
+  "version": "1.1.0",
+  "description": "Monitor estimated memory usage of browser tabs and quickly close heavy tabs.",
+  "permissions": ["tabs", "storage", "notifications"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Tab Memory",
@@ -23,7 +23,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "tabmemory@allenjohn",
-      "strict_min_version": "91.0"
+      "strict_min_version": "109.0"
     }
   }
 }

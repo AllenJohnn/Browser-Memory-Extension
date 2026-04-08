@@ -1,10 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Tab Memory Monitor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Monitor memory usage of browser tabs. Identify memory-heavy tabs and optimize browser performance.",
   "permissions": [
-    "tabs"
+    "tabs",
+    "storage",
+    "notifications"
   ],
   "action": {
     "default_popup": "popup.html",

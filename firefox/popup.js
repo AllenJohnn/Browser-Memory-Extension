@@ -19,11 +19,44 @@ document.addEventListener('DOMContentLoaded', function() {
   let tabsData = [];
   let sortDescending = true;
   let refreshInterval;
+
+  function stableHash(input) {
+    let hash = 0;
+    for (let i = 0; i < input.length; i += 1) {
+      hash = (hash << 5) - hash + input.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  async function getBackgroundTabMemoryMap() {
+    return new Promise((resolve) => {
+      try {
+        browserAPI.runtime.sendMessage({ action: 'getTabMemory' }, (response) => {
+          if (browserAPI.runtime.lastError || !response || !Array.isArray(response.tabs)) {
+            resolve(new Map());
+            return;
+          }
+
+          const memoryMap = new Map();
+          response.tabs.forEach((item) => {
+            if (typeof item.tabId === 'number' && typeof item.memory === 'number') {
+              memoryMap.set(item.tabId, item.memory);
+            }
+          });
+          resolve(memoryMap);
+        });
+      } catch (_error) {
+        resolve(new Map());
+      }
+    });
+  }
   
   async function updateMemoryInfo() {
     try {
       const tabs = await browserAPI.tabs.query({});
       let processMap = new Map();
+      const backgroundMemoryMap = await getBackgroundTabMemoryMap();
       
       if (typeof chrome !== 'undefined' && chrome.processes && typeof chrome.processes.getProcessInfo === 'function') {
         try {
@@ -48,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       tabsData = await Promise.all(tabs.map(async tab => {
         const processInfo = processMap.get(tab.id);
-        const memoryMB = processInfo?.memory || estimateMemoryByUrl(tab.url);
+        const memoryMB = processInfo?.memory || backgroundMemoryMap.get(tab.id) || estimateMemoryByTab(tab);
         
         let favIconUrl = tab.favIconUrl;
         if (!favIconUrl && tab.url) {
@@ -81,27 +114,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  function estimateMemoryByUrl(url) {
-    if (!url) return 50;
-    
-    const urlStr = url.toLowerCase();
-    
-    if (urlStr.includes('youtube.com') || urlStr.includes('netflix.com') || 
-        urlStr.includes('figma.com') || urlStr.includes('photoshop.com')) {
-      return 300 + Math.floor(Math.random() * 200);
+  function estimateMemoryByTab(tab) {
+    const url = (tab.url || '').toLowerCase();
+    let estimate = 45;
+
+    if (url.includes('youtube.com') || url.includes('netflix.com') || url.includes('twitch.tv')) {
+      estimate += 260;
+    } else if (url.includes('figma.com') || url.includes('canva.com') || url.includes('photoshop')) {
+      estimate += 220;
+    } else if (url.includes('docs.google.com') || url.includes('notion.so') || url.includes('slack.com')) {
+      estimate += 130;
+    } else if (url.includes('discord.com') || url.includes('teams.microsoft.com') || url.includes('meet.google.com')) {
+      estimate += 170;
+    } else if (url.includes('github.com') || url.includes('gitlab.com') || url.includes('stackoverflow.com')) {
+      estimate += 95;
+    } else {
+      estimate += 60;
     }
-    
-    if (urlStr.includes('docs.google.com') || urlStr.includes('notion.so') ||
-        urlStr.includes('discord.com') || urlStr.includes('slack.com')) {
-      return 150 + Math.floor(Math.random() * 100);
-    }
-    
-    if (urlStr.includes('twitter.com') || urlStr.includes('facebook.com') ||
-        urlStr.includes('instagram.com') || urlStr.includes('linkedin.com')) {
-      return 100 + Math.floor(Math.random() * 100);
-    }
-    
-    return 50 + Math.floor(Math.random() * 50);
+
+    const hash = stableHash(url || String(tab.id || 0));
+    estimate += hash % 30;
+
+    if (tab.active) estimate += 35;
+    if (tab.audible) estimate += 45;
+    if (tab.pinned) estimate -= 10;
+    if (tab.discarded) estimate -= 20;
+
+    return Math.max(20, Math.min(1200, Math.round(estimate)));
   }
   
   function displayTabs(tabs) {
@@ -267,13 +306,13 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function showMemoryDetails(tab) {
-    const details = `
-      <strong>${escapeHtml(tab.title)}</strong><br>
-      URL: ${escapeHtml(truncateUrl(tab.url, 50))}<br>
-      Memory: ${formatMemory(tab.memory)}<br>
-      Status: ${tab.active ? 'Active' : 'Background'}${tab.pinned ? ', Pinned' : ''}<br>
-      Tab ID: ${tab.id}
-    `;
+    const details = [
+      `Title: ${tab.title}`,
+      `URL: ${truncateUrl(tab.url, 50)}`,
+      `Memory: ${formatMemory(tab.memory)}`,
+      `Status: ${tab.active ? 'Active' : 'Background'}${tab.pinned ? ', Pinned' : ''}`,
+      `Tab ID: ${tab.id}`
+    ].join('\n');
     
     alert(details);
   }

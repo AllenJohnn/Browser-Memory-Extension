@@ -164,8 +164,9 @@ class TabMemoryExtension {
 
   async processTabs(tabs) {
     const processedTabs = [];
+    const memoryMap = await this.getBackgroundTabMemoryMap();
     for (const tab of tabs) {
-      const memory = this.estimateMemoryByUrl(tab.url);
+      const memory = memoryMap.get(tab.id) || this.estimateMemoryByTab(tab);
       const favIconUrl = this.getFaviconUrl(tab);
       processedTabs.push({
         id: tab.id,
@@ -184,28 +185,33 @@ class TabMemoryExtension {
     return processedTabs;
   }
 
-  estimateMemoryByUrl(url) {
-    if (!url || !url.startsWith('http')) return 50;
-    const urlLower = url.toLowerCase();
-    let baseMemory = 80;
-    if (urlLower.includes('youtube.com') || urlLower.includes('netflix.com')) {
-      baseMemory = 350 + Math.floor(Math.random() * 150);
-    } else if (urlLower.includes('figma.com') || urlLower.includes('adobe.com')) {
-      baseMemory = 300 + Math.floor(Math.random() * 100);
-    } else if (urlLower.includes('docs.google.com') || urlLower.includes('notion.so')) {
-      baseMemory = 200 + Math.floor(Math.random() * 100);
-    } else if (urlLower.includes('twitter.com') || urlLower.includes('facebook.com')) {
-      baseMemory = 150 + Math.floor(Math.random() * 100);
-    } else if (urlLower.includes('reddit.com') || urlLower.includes('linkedin.com')) {
-      baseMemory = 120 + Math.floor(Math.random() * 80);
-    } else if (urlLower.includes('discord.com') || urlLower.includes('slack.com')) {
-      baseMemory = 180 + Math.floor(Math.random() * 120);
-    } else if (urlLower.includes('github.com') || urlLower.includes('gitlab.com')) {
-      baseMemory = 100 + Math.floor(Math.random() * 80);
+  estimateMemoryByTab(tab) {
+    const urlLower = (tab.url || '').toLowerCase();
+    let estimate = 45;
+
+    if (urlLower.includes('youtube.com') || urlLower.includes('netflix.com') || urlLower.includes('twitch.tv')) {
+      estimate += 260;
+    } else if (urlLower.includes('figma.com') || urlLower.includes('canva.com') || urlLower.includes('photoshop')) {
+      estimate += 220;
+    } else if (urlLower.includes('docs.google.com') || urlLower.includes('notion.so') || urlLower.includes('slack.com')) {
+      estimate += 130;
+    } else if (urlLower.includes('discord.com') || urlLower.includes('teams.microsoft.com') || urlLower.includes('meet.google.com')) {
+      estimate += 170;
+    } else if (urlLower.includes('github.com') || urlLower.includes('gitlab.com') || urlLower.includes('stackoverflow.com')) {
+      estimate += 95;
     } else {
-      baseMemory = 80 + Math.floor(Math.random() * 70);
+      estimate += 60;
     }
-    return Math.max(20, baseMemory);
+
+    const hash = this.stableHash(urlLower || String(tab.id || 0));
+    estimate += hash % 30;
+
+    if (tab.active) estimate += 35;
+    if (tab.audible) estimate += 45;
+    if (tab.pinned) estimate -= 10;
+    if (tab.discarded) estimate -= 20;
+
+    return Math.max(20, Math.min(1200, Math.round(estimate)));
   }
 
   getFaviconUrl(tab) {
@@ -561,6 +567,39 @@ Tab ID: ${tab.id}
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  stableHash(input) {
+    let hash = 0;
+    for (let i = 0; i < input.length; i += 1) {
+      hash = (hash << 5) - hash + input.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  async getBackgroundTabMemoryMap() {
+    return new Promise((resolve) => {
+      try {
+        this.browserAPI.runtime.sendMessage({ action: 'getTabMemory' }, (response) => {
+          if (this.browserAPI.runtime.lastError || !response || !Array.isArray(response.tabs)) {
+            resolve(new Map());
+            return;
+          }
+
+          const memoryMap = new Map();
+          response.tabs.forEach((item) => {
+            if (typeof item.tabId === 'number' && typeof item.memory === 'number') {
+              memoryMap.set(item.tabId, item.memory);
+            }
+          });
+
+          resolve(memoryMap);
+        });
+      } catch (_error) {
+        resolve(new Map());
+      }
+    });
   }
 
   truncateText(text, maxLength) {
