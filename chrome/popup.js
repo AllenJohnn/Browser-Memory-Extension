@@ -3,6 +3,9 @@ class TabMemoryExtension {
     this.browserAPI = null;
     this.tabsData = [];
     this.sortDescending = true;
+    this.filterMode = 'all';
+    this.isCompactMode = false;
+    this.settingsPanelOpen = false;
     this.isInitialized = false;
     this.config = {
       REFRESH_INTERVAL: 10000,
@@ -22,9 +25,11 @@ class TabMemoryExtension {
       if (!this.browserAPI) {
         throw new Error('Unsupported browser');
       }
+      await this.loadSettings();
       this.showLoadingState();
       this.setupEventListeners();
       await this.loadInitialData();
+      this.applySettingsToUi();
       this.startAutoRefresh();
       this.isInitialized = true;
     } catch (error) {
@@ -41,11 +46,19 @@ class TabMemoryExtension {
       'tab-count',
       'total-used',
       'memory-progress',
-      'total-memory'
+      'total-memory',
+      'settings-toggle',
+      'settings-panel',
+      'save-settings',
+      'heavy-threshold',
+      'refresh-interval',
+      'compact-mode'
     ];
     elementIds.forEach(id => {
       this.elements[id] = document.getElementById(id);
     });
+
+    this.elements['filter-chips'] = Array.from(document.querySelectorAll('.filter-chip'));
   }
 
   detectBrowserAPI() {
@@ -141,6 +154,19 @@ class TabMemoryExtension {
     if (this.elements['cleanup-btn']) {
       this.elements['cleanup-btn'].addEventListener('click', () => this.handleCleanup());
     }
+    if (this.elements['settings-toggle']) {
+      this.elements['settings-toggle'].addEventListener('click', () => this.toggleSettingsPanel());
+    }
+    if (this.elements['save-settings']) {
+      this.elements['save-settings'].addEventListener('click', () => this.saveSettingsFromForm());
+    }
+    if (Array.isArray(this.elements['filter-chips'])) {
+      this.elements['filter-chips'].forEach((chip) => {
+        chip.addEventListener('click', () => {
+          this.setFilterMode(chip.dataset.filter || 'all');
+        });
+      });
+    }
     document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
     window.addEventListener('blur', () => this.stopAutoRefresh());
     window.addEventListener('focus', () => this.startAutoRefresh());
@@ -233,13 +259,14 @@ class TabMemoryExtension {
   renderTabsList() {
     if (!this.elements['tabs-list']) return;
     this.elements['tabs-list'].innerHTML = '';
-    if (this.tabsData.length === 0) {
+    const filteredTabs = this.getFilteredTabs(this.tabsData);
+    if (filteredTabs.length === 0) {
       this.elements['tabs-list'].innerHTML = this.createEmptyState();
       return;
     }
-    const tabsToDisplay = this.sortDescending 
-      ? [...this.tabsData].sort((a, b) => b.memory - a.memory)
-      : [...this.tabsData].sort((a, b) => a.memory - b.memory);
+    const tabsToDisplay = this.sortDescending
+      ? [...filteredTabs].sort((a, b) => b.memory - a.memory)
+      : [...filteredTabs].sort((a, b) => a.memory - b.memory);
     tabsToDisplay.forEach(tab => {
       const tabElement = this.createTabElement(tab);
       this.elements['tabs-list'].appendChild(tabElement);
@@ -284,6 +311,27 @@ class TabMemoryExtension {
         ${memoryDisplay}
         ${tab.active ? ' ⭐' : ''}
       </div>
+      <div class="quick-actions" aria-label="Quick actions">
+        <button class="quick-action-btn ${tab.pinned ? 'is-active' : ''}" data-action="pin" title="${tab.pinned ? 'Unpin tab' : 'Pin tab'}" aria-label="${tab.pinned ? 'Unpin tab' : 'Pin tab'}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 17v5" />
+            <path d="M5 4h14l-3 5v4l-4-2-4 2V9z" />
+          </svg>
+        </button>
+        <button class="quick-action-btn ${tab.muted ? 'is-active' : ''}" data-action="mute" title="${tab.muted ? 'Unmute tab' : 'Mute tab'}" aria-label="${tab.muted ? 'Unmute tab' : 'Mute tab'}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <line x1="23" y1="9" x2="17" y2="15" />
+            <line x1="17" y1="9" x2="23" y2="15" />
+          </svg>
+        </button>
+        <button class="quick-action-btn danger" data-action="close" title="Close tab" aria-label="Close tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
     `;
     this.addTabEventListeners(row, tab);
     return row;
@@ -291,7 +339,14 @@ class TabMemoryExtension {
 
   addTabEventListeners(element, tab) {
     element.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('memory-usage') && 
+      const actionButton = e.target.closest('.quick-action-btn');
+      if (actionButton) {
+        e.stopPropagation();
+        this.handleQuickAction(actionButton.dataset.action, tab);
+        return;
+      }
+
+      if (!e.target.classList.contains('memory-usage') &&
           !e.target.closest('.memory-usage')) {
         this.switchToTab(tab);
       }
@@ -306,6 +361,29 @@ class TabMemoryExtension {
         e.stopPropagation();
         this.showMemoryDetails(tab);
       });
+    }
+  }
+
+  async handleQuickAction(action, tab) {
+    try {
+      switch (action) {
+        case 'pin':
+          await this.togglePinTab(tab.id, !tab.pinned);
+          this.showToast(tab.pinned ? 'Tab unpinned' : 'Tab pinned', 'success');
+          break;
+        case 'mute':
+          await this.toggleMuteTab(tab.id, !tab.muted);
+          this.showToast(tab.muted ? 'Tab unmuted' : 'Tab muted', 'success');
+          break;
+        case 'close':
+          await this.closeTab(tab.id);
+          this.showToast('Tab closed', 'success');
+          break;
+        default:
+          break;
+      }
+    } catch (_error) {
+      this.showToast('Action failed', 'error');
     }
   }
 
@@ -386,12 +464,13 @@ Tab ID: ${tab.id}
 
   updateSummary() {
     const totalTabs = this.tabsData.length;
+    const filteredTabs = this.getFilteredTabs(this.tabsData);
     const totalMemory = this.tabsData.reduce((sum, tab) => sum + tab.memory, 0);
-    const avgMemory = totalTabs > 0 ? Math.round(totalMemory / totalTabs) : 0;
-    const heavyTabs = this.tabsData.filter(tab => tab.memory > this.config.HEAVY_TAB_THRESHOLD).length;
     const performanceWarning = (totalMemory / this.config.REFERENCE_MEMORY) > 0.7;
     if (this.elements['tab-count']) {
-      this.elements['tab-count'].textContent = totalTabs;
+      this.elements['tab-count'].textContent = this.filterMode === 'all'
+        ? totalTabs
+        : `${filteredTabs.length}/${totalTabs}`;
     }
     if (this.elements['total-used']) {
       this.elements['total-used'].textContent = this.formatMemory(totalMemory);
@@ -476,6 +555,7 @@ Tab ID: ${tab.id}
 
   handleSort() {
     this.sortDescending = !this.sortDescending;
+    this.persistSettings();
     if (this.elements['sort-btn']) {
       const sortBtn = this.elements['sort-btn'];
       const icon = sortBtn.querySelector('.btn-icon');
@@ -512,6 +592,128 @@ Tab ID: ${tab.id}
         this.showToast('Failed to close tabs', 'error');
       }
     }
+  }
+
+  getFilteredTabs(tabs) {
+    switch (this.filterMode) {
+      case 'active':
+        return tabs.filter((tab) => tab.active);
+      case 'pinned':
+        return tabs.filter((tab) => tab.pinned);
+      case 'heavy':
+        return tabs.filter((tab) => tab.memory > this.config.HEAVY_TAB_THRESHOLD);
+      case 'audible':
+        return tabs.filter((tab) => tab.audible);
+      default:
+        return tabs;
+    }
+  }
+
+  setFilterMode(mode) {
+    this.filterMode = mode;
+    this.updateFilterChips();
+    this.renderTabsList();
+    this.updateSummary();
+  }
+
+  updateFilterChips() {
+    if (!Array.isArray(this.elements['filter-chips'])) return;
+    this.elements['filter-chips'].forEach((chip) => {
+      chip.classList.toggle('active', chip.dataset.filter === this.filterMode);
+    });
+  }
+
+  toggleSettingsPanel() {
+    const panel = this.elements['settings-panel'];
+    if (!panel) return;
+    this.settingsPanelOpen = !this.settingsPanelOpen;
+    panel.hidden = !this.settingsPanelOpen;
+    if (this.elements['settings-toggle']) {
+      this.elements['settings-toggle'].classList.toggle('active', this.settingsPanelOpen);
+    }
+  }
+
+  getStorageArea() {
+    return this.browserAPI?.storage?.local || null;
+  }
+
+  async loadSettings() {
+    const defaults = {
+      heavyThreshold: this.config.HEAVY_TAB_THRESHOLD,
+      refreshInterval: this.config.REFRESH_INTERVAL,
+      sortDescending: this.sortDescending,
+      compactMode: this.isCompactMode
+    };
+
+    const storage = this.getStorageArea();
+    if (!storage) {
+      return;
+    }
+
+    const settings = await new Promise((resolve) => {
+      storage.get(defaults, (result) => {
+        if (this.browserAPI.runtime.lastError) {
+          resolve(defaults);
+          return;
+        }
+        resolve(result || defaults);
+      });
+    });
+
+    this.config.HEAVY_TAB_THRESHOLD = Number(settings.heavyThreshold) || defaults.heavyThreshold;
+    this.config.REFRESH_INTERVAL = Number(settings.refreshInterval) || defaults.refreshInterval;
+    this.sortDescending = Boolean(settings.sortDescending);
+    this.isCompactMode = Boolean(settings.compactMode);
+  }
+
+  applySettingsToUi() {
+    if (this.elements['heavy-threshold']) {
+      this.elements['heavy-threshold'].value = this.config.HEAVY_TAB_THRESHOLD;
+    }
+    if (this.elements['refresh-interval']) {
+      this.elements['refresh-interval'].value = String(this.config.REFRESH_INTERVAL);
+    }
+    if (this.elements['compact-mode']) {
+      this.elements['compact-mode'].checked = this.isCompactMode;
+    }
+    document.body.classList.toggle('compact-mode', this.isCompactMode);
+    this.updateFilterChips();
+  }
+
+  async persistSettings() {
+    const storage = this.getStorageArea();
+    if (!storage) {
+      return;
+    }
+
+    const payload = {
+      heavyThreshold: this.config.HEAVY_TAB_THRESHOLD,
+      refreshInterval: this.config.REFRESH_INTERVAL,
+      sortDescending: this.sortDescending,
+      compactMode: this.isCompactMode
+    };
+
+    await new Promise((resolve) => {
+      storage.set(payload, () => resolve());
+    });
+  }
+
+  async saveSettingsFromForm() {
+    const threshold = Number(this.elements['heavy-threshold']?.value || this.config.HEAVY_TAB_THRESHOLD);
+    const refreshInterval = Number(this.elements['refresh-interval']?.value || this.config.REFRESH_INTERVAL);
+    const compactMode = Boolean(this.elements['compact-mode']?.checked);
+
+    this.config.HEAVY_TAB_THRESHOLD = Math.min(1200, Math.max(100, threshold));
+    this.config.REFRESH_INTERVAL = [5000, 10000, 15000, 30000].includes(refreshInterval)
+      ? refreshInterval
+      : this.config.REFRESH_INTERVAL;
+    this.isCompactMode = compactMode;
+
+    this.applySettingsToUi();
+    this.startAutoRefresh();
+    await this.persistSettings();
+    await this.refreshData();
+    this.showToast('Preferences saved', 'success');
   }
 
   handleKeyboardShortcuts(event) {
@@ -635,11 +837,12 @@ Tab ID: ${tab.id}
   }
 
   createEmptyState() {
+    const isFiltered = this.filterMode !== 'all';
     return `
       <div class="empty-state">
         <div class="empty-state-icon">📊</div>
-        <h4>No Tabs Found</h4>
-        <p>Open some websites to see memory usage analysis.</p>
+        <h4>${isFiltered ? 'No Matching Tabs' : 'No Tabs Found'}</h4>
+        <p>${isFiltered ? 'Try another filter to see more tabs.' : 'Open some websites to see memory usage analysis.'}</p>
       </div>
     `;
   }

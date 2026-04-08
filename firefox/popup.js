@@ -102,7 +102,9 @@ document.addEventListener('DOMContentLoaded', function() {
           memory: memoryMB,
           active: tab.active,
           windowId: tab.windowId,
-          pinned: tab.pinned
+          pinned: tab.pinned,
+          muted: tab.mutedInfo?.muted || false,
+          audible: tab.audible || false
         };
       }));
       
@@ -181,6 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="tab-title" title="${escapeHtml(tab.title)}">
             ${escapeHtml(displayTitle)}
             ${tab.pinned ? ' 📌' : ''}
+            ${tab.audible && !tab.muted ? ' 🔊' : ''}
+            ${tab.muted ? ' 🔇' : ''}
           </div>
           <div class="tab-url" title="${escapeHtml(tab.url)}">
             ${escapeHtml(truncateUrl(tab.url))}
@@ -191,9 +195,21 @@ document.addEventListener('DOMContentLoaded', function() {
           ${tab.active ? ' ⭐' : ''}
           <span class="tooltiptext">Click for tab details</span>
         </div>
+        <div class="quick-actions" aria-label="Quick actions">
+          <button class="quick-action-btn ${tab.pinned ? 'is-active' : ''}" data-action="pin" title="${tab.pinned ? 'Unpin tab' : 'Pin tab'}" aria-label="${tab.pinned ? 'Unpin tab' : 'Pin tab'}">📌</button>
+          <button class="quick-action-btn ${tab.muted ? 'is-active' : ''}" data-action="mute" title="${tab.muted ? 'Unmute tab' : 'Mute tab'}" aria-label="${tab.muted ? 'Unmute tab' : 'Mute tab'}">${tab.muted ? '🔈' : '🔇'}</button>
+          <button class="quick-action-btn danger" data-action="close" title="Close tab" aria-label="Close tab">✕</button>
+        </div>
       `;
       
       row.addEventListener('click', (e) => {
+        const actionBtn = e.target.closest('.quick-action-btn');
+        if (actionBtn) {
+          e.stopPropagation();
+          void handleQuickAction(actionBtn.dataset.action, tab);
+          return;
+        }
+
         if (!e.target.classList.contains('memory-usage') && !e.target.closest('.memory-usage')) {
           browserAPI.tabs.update(tab.id, { active: true });
           browserAPI.windows.update(tab.windowId, { focused: true });
@@ -219,6 +235,22 @@ document.addEventListener('DOMContentLoaded', function() {
       
       tabsList.appendChild(row);
     });
+  }
+
+  async function handleQuickAction(action, tab) {
+    try {
+      if (action === 'pin') {
+        await browserAPI.tabs.update(tab.id, { pinned: !tab.pinned });
+      } else if (action === 'mute') {
+        await browserAPI.tabs.update(tab.id, { muted: !tab.muted });
+      } else if (action === 'close') {
+        await browserAPI.tabs.remove(tab.id);
+      }
+
+      setTimeout(updateMemoryInfo, 120);
+    } catch (_error) {
+      alert('Unable to perform quick action on this tab.');
+    }
   }
   
   function updateSummary() {

@@ -245,7 +245,7 @@ body {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  margin-right: 10px;
+  margin-right: 8px;
 }
 
 .tab-title {
@@ -281,6 +281,58 @@ body {
   transition: all 0.2s;
   border: 1px solid #e0e6ed;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-right: 6px;
+}
+
+.quick-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(5px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.tab-row:hover .quick-actions,
+.tab-row:focus-within .quick-actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.quick-action-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #d5dde7;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #5f6f80;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.quick-action-btn:hover {
+  color: #2c3e50;
+  border-color: #8eb9e6;
+  background: #f7fbff;
+}
+
+.quick-action-btn.is-active {
+  color: #1565c0;
+  background: #eaf3ff;
+  border-color: #90caf9;
+}
+
+.quick-action-btn.danger:hover {
+  color: #c62828;
+  border-color: #ef9a9a;
+  background: #ffebee;
 }
 
 .memory-usage:hover {

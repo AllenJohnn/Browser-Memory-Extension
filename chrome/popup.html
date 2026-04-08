@@ -69,7 +69,44 @@
 
         <div class="tabs-section">
             <div class="section-header">
-                <span class="section-title">Active Tabs</span>
+                <div class="section-header-row">
+                    <span class="section-title">Active Tabs</span>
+                    <button id="settings-toggle" class="settings-toggle" title="Open view settings" aria-label="Open view settings">
+                        <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33h0A1.65 1.65 0 0 0 9 3.09V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="filter-row" id="filter-row">
+                    <button class="filter-chip active" data-filter="all">All</button>
+                    <button class="filter-chip" data-filter="active">Active</button>
+                    <button class="filter-chip" data-filter="pinned">Pinned</button>
+                    <button class="filter-chip" data-filter="heavy">Heavy</button>
+                    <button class="filter-chip" data-filter="audible">Audible</button>
+                </div>
+            </div>
+            <div class="settings-panel" id="settings-panel" hidden>
+                <div class="settings-grid">
+                    <label class="setting-item" for="heavy-threshold">
+                        <span class="setting-label">Heavy Threshold</span>
+                        <input id="heavy-threshold" type="number" min="100" max="1200" step="10" />
+                    </label>
+                    <label class="setting-item" for="refresh-interval">
+                        <span class="setting-label">Refresh Every</span>
+                        <select id="refresh-interval">
+                            <option value="5000">5s</option>
+                            <option value="10000">10s</option>
+                            <option value="15000">15s</option>
+                            <option value="30000">30s</option>
+                        </select>
+                    </label>
+                    <label class="setting-item setting-checkbox" for="compact-mode">
+                        <span class="setting-label">Compact Mode</span>
+                        <input id="compact-mode" type="checkbox" />
+                    </label>
+                </div>
+                <button id="save-settings" class="save-settings-btn">Save Preferences</button>
             </div>
             <div id="tabs-list" class="tabs-list"></div>
         </div>
@@ -99,17 +136,19 @@
         </div>
 
         <div class="footer">
-            <a href="https://github.com/AllenJohnn/Browser-Memory-Extension" target="_blank">
+            <a class="footer-link" href="https://github.com/AllenJohnn/Browser-Memory-Extension" target="_blank" rel="noopener noreferrer">
                 <svg class="footer-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
                 </svg>
-                <span>View on GitHub</span>
+                <span>GitHub</span>
             </a>
-            <a href="https://allenjohnn.vercel.app/" target="_blank">
-                <svg class="footer-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm0 22c-5.52 0-10-4.48-10-10S6.48 2 12 2s10 4.48 10 10-4.48 10-10 10zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 10 15.5 10 14 10.67 14 11.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 10 8.5 10 7 10.67 7 11.5 7.67 13 8.5 13zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+            <a class="footer-link" href="https://allenjohnnportfolio.vercel.app/" target="_blank" rel="noopener noreferrer">
+                <svg class="footer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="7" width="18" height="13" rx="2" />
+                    <path d="M9 7V5a3 3 0 0 1 6 0v2" />
+                    <path d="M3 12h18" />
                 </svg>
-                <span>Visit Portfolio</span>
+                <span>Portfolio</span>
             </a>
         </div>
     </div>
